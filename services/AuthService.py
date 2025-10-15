@@ -62,8 +62,8 @@ class AuthService:
                 # Intentamos leer el resultado que el SP puede retornar (p. ej. SELECT LAST_INSERT_ID() AS id)
                 row = cur.fetchone()
                 conn.commit()
-                if row and 'id' in row:
-                    return row['id']
+                if row :
+                    return row[0]
                 # si no hay fila devuelta, intentar obtener lastrowid
                 return cur.lastrowid or None
         finally:
