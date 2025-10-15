@@ -1,7 +1,10 @@
 from dotenv import load_dotenv #importamos load_dotenv desde python-dotenv module
 import os #nos da acceso a OS y nos ayuda a leer las variables de entorno
-load_dotenv() #cargamos el env
 import pymysql #importamos la librería de mysql
+
+if os.environ.get('VERCEL') is None:
+    from dotenv import load_dotenv
+    load_dotenv()
 
 #Creamos un diccionario de datos
 HOST = os.getenv("MYSQL_HOST")
