@@ -1,159 +1,99 @@
-"""
-Servicio de autenticación.
-- Todas las consultas a la DB se realizan mediante Stored Procedures (SP).
-- Cada SP se separa y documenta con un comentario.
-- Se usa database.db_mysql.get_connection() para obtener la conexión.
-- Se intenta devolver una instancia del modelo Users si el modelo provee un constructor compatible,
-  si no, se devuelve el diccionario directo.
-"""
 from database.db_mysql import get_connection
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
-
-# Intento de usar tu modelo Users si existe.
-try:
-    from models.Users import Users
-except Exception:
-    Users = None  # si no encaja el modelo, retornamos dicts
+from models.Users import Users
+from flask_bcrypt import Bcrypt  # Para encriptar contraseñas
+from flask_jwt_extended import create_access_token, create_refresh_token
 
 class AuthService:
-    # -----------------------------
-    # SP: Obtener usuario por email
-    # SP name assumed: sp_get_user_by_email
-    # Devuelve columnas: id, email, password_hash, (opcional) otros campos
-    # -----------------------------
-    @staticmethod
-    def find_user_by_email_sp(email: str):
-        conn = None
-        try:
-            conn = get_connection()
-            with conn.cursor() as cur:
-                # CALL al SP que busca usuario por email
-                cur.execute('call sp_get_user_by_email(%s)', (email,))
-                row = cur.fetchone()
-                # Si existe un modelo Users aprovechamos su constructor o from_dict
-                if row and Users:
-                    try:
-                        # Intentamos construir la instancia del modelo (si soporta dict unpack)
-                        return Users(**row)
-                    except Exception:
-                        # Si no es posible, devolvemos el dict
-                        return row
-                return row
-        finally:
-            if conn:
-                conn.close()
 
-    # -----------------------------
-    # SP: Crear usuario (registro)
-    # SP name assumed: sp_create_user
-    # Parámetros: p_email, p_password_hash
-    # Debe devolver id (SELECT LAST_INSERT_ID() AS id) o un indicador de error
-    # -----------------------------
-    @staticmethod
-    def create_user_sp(email: str, plain_password: str):
-        password_hash = generate_password_hash(plain_password)
-        conn = None
+    @classmethod
+    def register_user(cls, email: str, password: str):
+        """
+        Registra un nuevo usuario en la base de datos
+        """
         try:
-            conn = get_connection()
-            with conn.cursor() as cur:
-                # CALL al SP para crear usuario
-                cur.execute('call sp_create_user(%s, %s)', (email, password_hash))
-                # Intentamos leer el resultado que el SP puede retornar (p. ej. SELECT LAST_INSERT_ID() AS id)
-                row = cur.fetchone()
-                conn.commit()
-                if row :
-                    return row[0]
-                # si no hay fila devuelta, intentar obtener lastrowid
-                return cur.lastrowid or None
+            connection = get_connection()
+            with connection.cursor() as cursor:
+                #Verifica si el usuario ya existe
+                cursor.execute("call sp_user_verification(%s)", (email,))
+                #SELECT id FROM users WHERE email = %s
+                existing_user = cursor.fetchone()
+                if existing_user:
+                    return None, "El usuario ya existe"
+                #Encriptar la contrasenna antes de guardarla
+                hashed_password = Bcrypt.generate_password_hash(password).decode('utf-8')
+                #Insertar nuevo usuario
+                cursor.execute("call sp_register_user(%s, %s)", (email, hashed_password))
+                #INSERT INTO users(email, password) VALUES (%s, %s)
+                user_id = cursor.fetchon()
+                connection.commit()
+                #Crear el objeto usuario
+                user = Users(user_id, email, hashed_password)
+                return user, ("Usuario registrado exitosamente")
+        except Exception as ex:
+            print(f'Exception. Type {type(ex)}: {str(ex)}')
+            if connection:
+                connection.rollback()
+            return None, "Error en el servidor"
         finally:
-            if conn:
-                conn.close()
+            if connection:
+                connection.close()
 
-    # -----------------------------
-    # SP: Guardar refresh token
-    # SP name assumed: sp_save_refresh_token
-    # Parámetros: p_user_id, p_jti, p_token, p_expires, p_last_activity
-    # -----------------------------
-    @staticmethod
-    def save_refresh_token_sp(user_id: int, token_jti: str, token_str: str, expires_at: datetime, last_activity: datetime):
-        conn = None
+    @classmethod
+    def authenticate_user(cls, email: str, password: str):
+        """
+        Autentica un usuario y genera tokens JWT si las credenciales son validas
+        """
         try:
-            conn = get_connection()
-            with conn.cursor() as cur:
-                # CALL al SP que inserta el refresh token en la tabla correspondiente
-                cur.execute('call sp_save_refresh_token(%s, %s, %s, %s, %s)', (
-                    user_id,
-                    token_jti,
-                    token_str,
-                    expires_at.strftime('%Y-%m-%d %H:%M:%S'),
-                    last_activity.strftime('%Y-%m-%d %H:%M:%S')
-                ))
-                conn.commit()
-                return True
+            connection = get_connection()
+            with connection.cursor() as cursor:
+                #Buscar usuario por email
+                cursor.execute("call search_by_email(%s)", (email,))
+                #"SELECT id, email, password FROM users WHERE email = %s"
+                row = cursor.fetchone()
+                if row is None:
+                    return None, "Credenciales invalidas"
+                user_id, user_email, hashed_password = row
+                #Verificar contrasenna
+                if Bcrypt.check_password_hash(hashed_password, password):
+                    #Crear tokens JWT
+                    accses_token = create_access_token(identity=user_id)
+                    refresh_token = create_refresh_token(identity=user_id)
+                    user = Users(user_id, user_email, hashed_password)
+                    return {
+                        'user': user.to_dict(),
+                        'access_token': accses_token,
+                        'refresh_token': refresh_token
+                    }, "Login existoso"
+                else:
+                    return None, "Credenciales invalidas"
+        except Exception as ex:
+            print(f'Exception. Type {type(ex)}: {str(ex)}')
+            if connection:
+                connection.rollback()
+                return None, "Error en el servidor"
         finally:
-            if conn:
-                conn.close()
+            if connection:
+                connection.close()
 
-    # -----------------------------
-    # SP: Obtener refresh token por jti
-    # SP name assumed: sp_get_refresh_token_by_jti
-    # Debe devolver: user_id, token_str, expires_at, last_activity, revoked, email (opcional)
-    # -----------------------------
-    @staticmethod
-    def get_refresh_token_by_jti_sp(token_jti: str):
-        conn = None
+    @classmethod
+    def get_user_by_id(cls, user_id):
+        """
+        Obtiene un usuario por su ID (util para verificar tokens)
+        """
         try:
-            conn = get_connection()
-            with conn.cursor() as cur:
-                cur.execute('call sp_get_refresh_token_by_jti(%s)', (token_jti,))
-                row = cur.fetchone()
-                return row
+            connection = get_connection()
+            with connection.cursor() as cursor:
+                cursor.execute("call sp_get_user_by_id(%s)", (user_id,))
+                #"SELECT id, email, password FROM users WHERE id = %s"
+                row = cursor.fetchone()
+                if row:
+                    return Users(row[0], row[1], row[2])
+                return None
+        except Exception as ex:
+            print(f'Exception. Type {type(ex)}: {str(ex)}')
+            if connection:
+                connection.rollback()
+            return None
         finally:
-            if conn:
-                conn.close()
-
-    # -----------------------------
-    # SP: Actualizar last_activity del refresh token
-    # SP name assumed: sp_update_refresh_token_activity
-    # Parámetros: p_jti, p_last_activity
-    # -----------------------------
-    @staticmethod
-    def update_refresh_token_activity_sp(token_jti: str, last_activity: datetime):
-        conn = None
-        try:
-            conn = get_connection()
-            with conn.cursor() as cur:
-                cur.execute('call sp_update_refresh_token_activity(%s, %s)', (token_jti, last_activity.strftime('%Y-%m-%d %H:%M:%S')))
-                conn.commit()
-                return True
-        finally:
-            if conn:
-                conn.close()
-
-    # -----------------------------
-    # SP: Revocar refresh token (marcar revoked = 1)
-    # SP name assumed: sp_revoke_refresh_token
-    # Parámetros: p_jti
-    # -----------------------------
-    @staticmethod
-    def revoke_refresh_token_sp(token_jti: str):
-        conn = None
-        try:
-            conn = get_connection()
-            with conn.cursor() as cur:
-                cur.execute('call sp_revoke_refresh_token(%s)', (token_jti,))
-                conn.commit()
-                return True
-        finally:
-            if conn:
-                conn.close()
-
-    # -----------------------------
-    # Util: verificar contraseña (hash almacenado con werkzeug)
-    # -----------------------------
-    @staticmethod
-    def verify_password(plain_password: str, stored_hash: str) -> bool:
-        if not stored_hash:
-            return False
-        return check_password_hash(stored_hash, plain_password)
+            if connection:
+                connection.close()

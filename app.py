@@ -4,7 +4,7 @@ from datetime import timedelta
 from flask_jwt_extended import JWTManager
 # Importamos los Blueprints de las nuevas rutas
 from routes.TestRoutes import test_bp
-from routes.AuthRoutes import auth_bp
+#from routes.AuthRoutes import auth_bp
 
 if os.environ.get('VERCEL') is None:
     from dotenv import load_dotenv
@@ -20,7 +20,7 @@ app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
 jwt = JWTManager(app)
 
 app.register_blueprint(test_bp)
-app.register_blueprint(auth_bp, url_prefix="/auth") # prefijo /auth para rutas de login
+#app.register_blueprint(auth_bp, url_prefix="/auth") # prefijo /auth para rutas de login
 
 @app.get("/api")
 #lo de aqui arriba es un decorardor de flask en el cual definimos la ruta de GET
