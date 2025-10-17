@@ -18,7 +18,8 @@ def get_connection():
             host=HOST,
             user=USER,
             password=PASSWORD,
-            database=DATABASE
+            database=DATABASE,
+            autocommit=False
         )
     except Exception as ex:
         raise ex

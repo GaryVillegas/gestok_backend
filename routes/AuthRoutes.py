@@ -68,4 +68,47 @@ def refresh():
     except Exception as ex:
         return jsonify({'error': 'Error al refrescar token'}), 500
     
-#TODO: https://chat.deepseek.com/share/66ag69uyvbzn74t1f1
+@auth_bp.route('/protected', methods=['GET'])
+@jwt_required() #Requiere un access token valido
+def protected():
+    """
+    Ruta protegida que requiere autenticación
+    Ejemplo de cómo proteger rutas con JWT
+    """
+    try:
+        #Obtener el ID del usuario desde el token
+        current_user_id = get_jwt_identity()
+        #Obtener información del usuario
+        user = AuthService.get_user_by_id(current_user_id)
+        if user:
+            return jsonify({'message': 'Acceso permitido a ruta protegida', 'user': user.to_dict()}), 200
+        else:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+    except Exception as ex:
+        return jsonify({'error': 'Error de autenticación'}), 401
+    
+@auth_bp.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    """
+    Ruta para logout (en JWT normalmente se maneja en el cliente)
+    Pero podemos validar el token si usamos una backlist
+    """
+    #En una implementación avanzada, agregaremos token blacklist
+    return jsonify({'message': 'Logout exitoso'}), 200
+
+@auth_bp.route('/me', methods=['GET'])
+@jwt_required()
+def get_current_user():
+    """
+    Ruta para obtener información del usuario actualmente autenticado
+    """
+    try:
+        current_user_id = get_jwt_identity()
+        user = AuthService.get_user_by_id(current_user_id)
+        if user:
+            return jsonify({'user': user.to_dict()}), 200
+        else:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+    except Exception as ex:
+        return jsonify({'error': 'Error al obtener usuario'}), 500
