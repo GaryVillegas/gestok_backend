@@ -9,4 +9,4 @@ class Product:
         self.category = category
         self.local = local
     
-    #TO DO: to_dict
+    #TODO: to_dict
