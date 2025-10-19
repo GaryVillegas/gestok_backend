@@ -151,7 +151,6 @@ class AuthService:
                 cursor.execute("call sp_get_user_by_id(%s)", (user_id,))
                 # Equivalente a: "SELECT id, email, password FROM users WHERE id = %s"
                 row = cursor.fetchone()
-                
                 # Si se encuentra el usuario, crear y retornar objeto Users
                 if row:
                     return Users(row[0], row[1], row[2])  # id, email, password
