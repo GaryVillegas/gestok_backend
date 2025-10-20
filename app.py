@@ -6,6 +6,7 @@ from flask_bcrypt import Bcrypt
 # Importamos los Blueprints de las nuevas rutas
 from routes.TestRoutes import test_bp
 from routes.AuthRoutes import auth_bp
+from routes.AccountRoutes import account_bp
 
 if os.environ.get('VERCEL') is None:
     from dotenv import load_dotenv
@@ -23,6 +24,7 @@ bcrypt = Bcrypt(app)
 
 app.register_blueprint(test_bp)
 app.register_blueprint(auth_bp, url_prefix="/auth") # prefijo /auth para rutas de login
+app.register_blueprint(account_bp, url_prefix='/account')
 
 # Callback para verificar tokens en blacklist (opcional)
 @jwt.token_in_blocklist_loader

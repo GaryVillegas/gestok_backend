@@ -61,7 +61,7 @@ def login():
                 'message': message, 
                 'access_token': result['access_token'],
                 'refresh_token': result['refresh_token'],
-                'user': result['user']
+                #'user': result['user']
             })
 
             # Establecer cookies HTTP-Only para los tokens

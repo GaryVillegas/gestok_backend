@@ -8,16 +8,16 @@ class AccountService:
     """
     
     @classmethod
-    def create_account(cls, account, user_id):
+    def create_account(cls, account, user_id: int):
         try:
             #Obtenemos conexion a bbddd
             connection = get_connection()
-            with connection.cursor as cursor:
-                cursor.execute("call sp_create_account(%s, %s, %s, %s)", (account.name, account.lastname, account.rut, user_id,))
+            with connection.cursor() as cursor:
+                cursor.execute("call sp_create_account(%s, %s, %s, %s)", (account['name'], account['lastname'], account['rut'], user_id,))
                 row = cursor.fetchone()
                 if row is None:
                     return None, "Error al crear cuenta."
-                account_id = row
+                account_id = row[0]
                 connection.commit()
                 return {
                     'account_id': account_id,
@@ -32,7 +32,7 @@ class AccountService:
                 connection.close()
 
     @classmethod
-    def get_account(cls, user_id):
+    def get_account(cls, user_id: int):
         try:
             connection = get_connection()
             with connection.cursor() as cursor:
@@ -63,7 +63,7 @@ class AccountService:
                 connection.close()
 
     @classmethod
-    def delete_account(cls, user_id):
+    def delete_account(cls, user_id: int):
         try:
             connection = get_connection()
             with connection.cursor() as cursor:
