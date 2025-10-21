@@ -19,9 +19,7 @@ class AccountService:
                     return None, "Error al crear cuenta."
                 account_id = row[0]
                 connection.commit()
-                return {
-                    'account_id': account_id,
-                }, "Cuenta creada con exito"
+                return account_id, "Cuenta creada con exito"
         except Exception as ex:
             print(f"Exception. Type {str(type)}: {str(ex)}")
             if connection:
@@ -44,13 +42,9 @@ class AccountService:
                     return None, "No se encontro la cuenta."
                 #Al tener datos, armarlos
                 id, name, lastname, rut = row
-                # Confirmar la transacción en la base de datos
-                connection.commit()
                 #Armar los datos segun modelo y retornarlos
-                account = Account(id, name, lastname, rut, user_id)
-                return {
-                    'account': account.to_dict(),
-                }, "Se encontro la cuenta!"
+                account = Account(id,name, lastname, rut, user_id)
+                return account, "Se encontro la cuenta!"
         except Exception as ex:
             # Manejo de errores durante la autenticación
             print(f"Exception. Type {type(ex)}: {str(ex)}")
@@ -68,13 +62,16 @@ class AccountService:
             connection = get_connection()
             with connection.cursor() as cursor:
                 cursor.execute("call sp_delete_account(%s)", (user_id,))
-                affected_row = cursor.rowcount
+                result = cursor.fetchone()
                 connection.commit()
-                if affected_row:
-                    return {
-                        'row affected': affected_row,
-                    }, "Se elimino cuenta."
-                return None, "Error al eliminar cuenta."
+                if result:
+                    row_affected = result[0]
+                    if row_affected > 0:
+                        return row_affected, "Se eliminó cuenta exitosamente"
+                    else:
+                        return 0, "No se encontraron datos para eliminar"
+                
+                return 0, "Error al eliminar cuenta."
         except Exception as ex:
             print(f"Exception. Type {str(type)}: {str(ex)}")
             if connection:

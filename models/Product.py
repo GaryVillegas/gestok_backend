@@ -10,3 +10,13 @@ class Product:
         self.local = local
     
     #TODO: to_dict
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'price': self.name,
+            'quantity': self.quantity,
+            'size': self.size,
+            'categoy': self.category,
+            'local': self.local
+        }

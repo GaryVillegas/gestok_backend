@@ -47,7 +47,8 @@ class AuthService:
                 # Equivalente a: INSERT INTO users(email, password) VALUES (%s, %s)
                 
                 # Obtener el ID del usuario recién creado
-                user_id = cursor.fetchone()  # Obtiene el resultado del stored procedure
+                user_data = cursor.fetchone()# Obtiene el resultado del stored procedure
+                user_id = user_data[0]
                 
                 # Confirmar la transacción en la base de datos
                 connection.commit()

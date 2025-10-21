@@ -9,6 +9,7 @@ class Account:
     
     def to_dict(self):
         return {
+            'id': self.id,
             'name': self.name,
             'lastname': self.lastname,
             'rut': self.rut,

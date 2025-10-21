@@ -45,6 +45,8 @@ def account():
     """
     Ruta para traer cuenta de usuario
     """
+    #Esta dando error 400.
+    """Era problema del sp, estaba devolviendo 4 valores y esperamos 3."""
     try:
         current_user_id = int(get_jwt_identity())
         if not current_user_id:
@@ -52,11 +54,11 @@ def account():
         
         user_account, message = AccountService.get_account(current_user_id)
         if user_account:
-            return jsonify({'message': message, 'account': user_account.to_dict()}), 201
+            return jsonify({'message': message, 'account': user_account.to_dict()}), 200
         
         return jsonify({'message': message}), 400
     except Exception as ex:
-        print(f"Error en login: {str(ex)}")
+        print(f"Error al traer cuenta: {str(ex)}")
         return jsonify({'Error': 'Error interno del servidor'}), 500
     
 @account_bp.route('/myaccount/delete', methods=['DELETE'])
@@ -71,10 +73,10 @@ def delete_account():
             return jsonify({'Error': 'Error al elimnar usuario.'}), 400
         
         row_affected, message = AccountService.delete_account(current_user_id)
-        if row_affected:
+        if row_affected is not None and row_affected > 0:
             return jsonify({'message': message, 'row affected': row_affected}), 201
         
         return jsonify({'message': message}), 400
     except Exception as ex:
-        print(f"Error en login: {str(ex)}")
+        print(f"Error al eliminar cuenta: {str(ex)}")
         return jsonify({'Error': 'Error interno del servidor'}), 500
