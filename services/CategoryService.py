@@ -22,7 +22,7 @@ class CategoryServie:
             print(f"Exception. Type {str(type)}: {str(ex)}")
             if connection:
                 connection.rollback()
-            return None, "Erro en el servidor"
+            return None, "Error en el servidor"
         finally:
             if connection: connection.close()
     
@@ -33,14 +33,13 @@ class CategoryServie:
             with connection.cursor() as cursor:
                 cursor.execute("call sp_get_categories(%s)", (user_id, ))
                 rows = cursor.fetchall()
-                if rows is None:
+                if not rows:
                     return None, "No se encontraron categorias."
                 
                 categories = [
                     Category(row[0], row[1], user_id)
                     for row in rows
                 ]
-
                 return categories, "Se encontraron categorias."
         except Exception as ex:
             print(f"Exception. Type{str(type)}: {str(ex)}")
