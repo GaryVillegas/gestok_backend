@@ -16,7 +16,7 @@ def register():
     """
     try:
         # Obtener datos del request en formato JSON
-        email = request.json.get('email', None)
+        email = request.json.get('email', None).strip().lower()
         password = request.json.get('password', None)
         
         # Validar que se proporcionen todos los datos necesarios
@@ -44,7 +44,7 @@ def login():
     """
     try:
         # Obtener credenciales del request
-        email = request.json.get('email', None)
+        email = request.json.get('email', None).strip().lower()
         password = request.json.get('password', None)
         
         # Validar que se proporcionen las credenciales
@@ -180,7 +180,6 @@ def logout():
         # AuthService.log_logout_event(current_user_id)
         
         return response
-        
     except Exception as ex:
         # Log del error para debugging
         print(f"Error en logout: {str(ex)}")

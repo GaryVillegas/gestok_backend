@@ -53,3 +53,22 @@ def store():
     except Exception as ex:
         print(f"Error al traer tienda: {str(ex)}")
         return jsonify({'Error': 'Error interno del servidor'}), 500
+    
+@store_bp.route('/delete/<int:store_id>', methods=['DELETE'])
+@jwt_required()
+def delete_store(store_id: int):
+    """
+    Ruta para poder eliminar tienda
+    """
+    try:
+        if not store_id:
+            return jsonify({'error': 'tienda no encontrada.'}), 400
+        
+        row_affected, message = StoreService.delete_store(store_id)
+        if row_affected is not None and row_affected > 0:
+            return jsonify({'message': message, 'row_affected': row_affected}), 200
+        
+        return jsonify({'message': message}), 400
+    except Exception as ex:
+        print(f"Error al eliminar cuenta. Type {str(type)}: {str(ex)}")
+        return jsonify({'Error': 'Error interno del servidor'}), 500

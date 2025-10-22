@@ -74,7 +74,7 @@ def delete_account():
         
         row_affected, message = AccountService.delete_account(current_user_id)
         if row_affected is not None and row_affected > 0:
-            return jsonify({'message': message, 'row affected': row_affected}), 201
+            return jsonify({'message': message, 'row_affected': row_affected}), 201
         
         return jsonify({'message': message}), 400
     except Exception as ex:

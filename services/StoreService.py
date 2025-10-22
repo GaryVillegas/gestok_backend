@@ -47,4 +47,36 @@ class StoreService:
             if connection:
                 connection.close()
 
-#TODO: crear la funcion para eliminar tienda.
+    @classmethod
+    def delete_store(cls, store_id: int):
+        try:
+            #Connection to database
+            connection = get_connection()
+            #Establish connection cursor as cursor
+            with connection.cursor() as cursor:
+                #Calling database sp to delete store with store id
+                cursor.execute("call sp_delete_store(%s)", (store_id,))
+                #Fetch the result
+                result = cursor.fetchone()
+                connection.commit()
+                #if there are result and are mayor to 0 return the row affected
+                if result:
+                    row_affected = result[0]
+                    if row_affected > 0:
+                        return row_affected, "Se elimino tienda exitosamente."
+                    #if are less or equal to 0, return message
+                    else:
+                        return 0, "No se encontraron datos para eliminar"
+                
+                #If are no result, that mean we have an error in database or code.
+                return 0, "Error al eliminar tienda."
+        except Exception as ex:
+            #Retrun exceptions
+            print(f"Exception. type{str(type)}: {str(ex)}")
+            if connection:
+                connection.rollback()
+            return None, "Error en el servidor"
+        finally:
+            #Close connection to database
+            if connection:
+                connection.close()
