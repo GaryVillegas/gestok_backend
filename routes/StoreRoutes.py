@@ -70,5 +70,5 @@ def delete_store(store_id: int):
         
         return jsonify({'message': message}), 400
     except Exception as ex:
-        print(f"Error al eliminar cuenta. Type {str(type)}: {str(ex)}")
+        print(f"Error al eliminar tienda. Type {str(type)}: {str(ex)}")
         return jsonify({'Error': 'Error interno del servidor'}), 500
