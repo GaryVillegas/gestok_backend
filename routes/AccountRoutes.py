@@ -31,12 +31,12 @@ def register_account():
         #Registrar cuenta de usuairo
         account_id, message = AccountService.create_account(account, current_user_id)
         if account_id:
-            return jsonify({'message': message, 'account_id': account_id}), 201
+            return jsonify({'message': message, 'account_id': account_id}), 200
         
         return jsonify({'message': message}), 400
     except Exception as ex:
         #Manejar errores
-        print(f"Error en login: {str(ex)}")
+        print(f"Error en creación: {str(ex)}")
         return jsonify({'Error': 'Error interno del servidor'}), 500
 
 @account_bp.route('/myaccount', methods=['GET'])

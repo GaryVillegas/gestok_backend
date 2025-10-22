@@ -154,8 +154,8 @@ class AuthService:
                 row = cursor.fetchone()
                 # Si se encuentra el usuario, crear y retornar objeto Users
                 if row:
-                    return Users(row[0], row[1], row[2])  # id, email, password
-                return None  # Usuario no encontrado
+                    return Users(row[0], row[1], row[2]), "Usuario encontrado."  # id, email, password
+                return None, "No se encontro el usuario."  # Usuario no encontrado
                 
         except Exception as ex:
             # Manejo de errores en la consulta
