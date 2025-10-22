@@ -5,4 +5,9 @@ class Category:
         self.description = description
         self.user_id = user_id
 
-    #TO DO: to_dict()
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'description': self.description,
+            'user_id': self.user_id
+        }
