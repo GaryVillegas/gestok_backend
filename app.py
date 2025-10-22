@@ -9,6 +9,7 @@ from routes.AuthRoutes import auth_bp
 from routes.AccountRoutes import account_bp
 from routes.StoreRoutes import store_bp
 from routes.CategoryRoutes import category_bp
+from routes.DistributorRoutes import distributor_bp
 
 if os.environ.get('VERCEL') is None:
     from dotenv import load_dotenv
@@ -29,6 +30,7 @@ app.register_blueprint(auth_bp, url_prefix="/api/v1/auth") # prefijo /auth para 
 app.register_blueprint(account_bp, url_prefix='/api/v1/account')
 app.register_blueprint(store_bp, url_prefix='/api/v1/store')
 app.register_blueprint(category_bp, url_prefix='/api/v1/category')
+app.register_blueprint(distributor_bp, url_prefix='/api/v1/distributor')
 
 # Callback para verificar tokens en blacklist (opcional)
 @jwt.token_in_blocklist_loader

@@ -60,7 +60,7 @@ def delete_category(category_id: int):
     """
     try:
         if not category_id:
-            return jsonify({'error': 'categoria no encontrada'}), 400
+            return jsonify({'error': 'categoria no encontrada'}), 404
         
         row_affected, message = CategoryServie.delete_category(category_id)
         if row_affected is not None and row_affected > 0:
